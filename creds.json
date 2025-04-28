@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "verdant-option-451806-e6",
+  "private_key_id": "78c7da3f721659c1ab4706751adc0f98a7f6db2f",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCVRBlM+jrwfxFw\nLBaZW0PhesTkEo60utIolOD892ZR6HufyGJBLHz7/14ERDBKu/CB9yIJS5iS14nC\nBShT3OdowZOTgTPProW6lZlrNJ5WXZoQpjLuJt/CrxXG40J4GNQ+4hoif2y0bZdC\nC8PBnIHLcxzS6WbZp8wItKUUdEsPYXUFC8eLx7TPfvRa/8hT98/fPJZZq6v6geJL\naMDF7rC7+gq5gBWhyp3ZxVmahof0lTiGC7QYQIcaNyFbgsOPI12osOGVd3V8pju/\nwGdFwpEL2xnCDE2Tz1UhjbNHFtnfWMJHNZXSUOLu5Jal+dP6TCemG/aSnPWB/TCw\nabAfJkB/AgMBAAECggEASCcYcdDdr8ZEqCvvqqbmu7ZsOXFNAUjzcMFytmVi1QIj\nzBuBf06hhfCtwjMyAtYxTqmnDsY3lPfSc/KpSUyVodo824cPg/sxUn2hISTYyxfI\n8vZb1Sn+bO3UgYT2avZZlqIWDwn4gokdHkRwloTwaueUjdFcMac+ZhDoYWhLpj1x\nZaNXTXM3WexDGe+jDKHU4O9gqEVeorIyzhGrUNGZ6pVcGZOjSFZB5hM3kzgldqIN\nLAemtG3pDb+NO5+P0uSkhXrym7/noJR9MxKajAJjyfQXrIKXkATPOehE4vEyyd1X\n6COJS9ox/a3iuGXwQRln3UZMXV5mDCIhMIgdIyx2oQKBgQDExfK/pTdG+mQj3+fy\n344N1tXzfpWB/I3T78R4HJByn3mbjK48iMbsqlCAoHk0LKHT0fj/2JIKb6Olr51t\nrZbHtQbkzV0lDp2eHbJ1ikuvjhAoEYn81/pKleqDK1KWvohN0wmEy8tNxyDEnDzI\npl/TzNthVX5Rg8Ei5AjnH6FAoQKBgQDCMY5mGxgZ+bbp4ry8z0vbv4yZgk4fCKI2\nXVGYukQbYtT2ouV8YJQwgYNrmhCeZ/9jFikv+a33RNxK35Iv5qkexvf2tQ1H1wQl\nDYdJYI/8YtDE+QmOrFaJRNk29ZqPBhj+yZWD4XZzzWJ7fCGCXib+0+GVFXfsaghn\n8aUXiM9NHwKBgQCaYmCaAmuDUdMd3n/iq4mNzCAjIg71ZIx2Wyk/v9GJTRwhcdgG\ngJ3qc5ojwUQ3LkltotGFEotKitrPlSCkO80QNTUKcSICgBwkQVKSLAZD3+dHOLOV\n4HJs8ICFl4j94tGYldpjCW4iQPixqY97MiX/TDxXerdYB1KSKG3fwI5I4QKBgFGp\n1WBK9I+325vvpb8gzZ3Tp6TGj2OtlcmW5MF9UzbREQ3G4wqy8p6TWFjfqS10PonE\nv/1U2jup0ZoK+sb6ERTIR26QJM2ZNjz+u224FdTlGTY8JDDDeICxW0cpcZ3Dyq8a\nxq13GwEH1epoAQ952JxBLhQruwrIbFCJ5gtHlSWxAoGBAMN0crYiEr9uKbkMxD3G\nqYvXRsdB9HxobuCNYmA42cVrQCAXJZXUWvpTF7j00IGklyHgl/zzCn5Fcg7biU5Y\n1Yg2bdWPLMwR7Vjuie1qZZBTS7kDKM1KZLNvaaozW0izXq4JzczIHNm7xBW8fLtI\n7lzL8b/RK/hT9LNhKNMuwuNW\n-----END PRIVATE KEY-----\n",
+  "client_email": "google-sheets-python-307@verdant-option-451806-e6.iam.gserviceaccount.com",
+  "client_id": "116692188363115663738",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/google-sheets-python-307%40verdant-option-451806-e6.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

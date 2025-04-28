@@ -1,0 +1,168 @@
+import os
+
+import requests, base64, json, gspread, boto3, io, gc
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+
+try:
+    from .epub_merge import doMerge
+except Exception as e:
+    from epub_merge import doMerge
+
+from google.oauth2 import service_account
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+import multiprocessing
+
+
+class NextoryDownload:
+    ACCESS_KEY = "519FJZYVBS5VM0EBLGPN"
+    SECRET_KEY = "TeeRHkHzmnyqetCnJP6qJyyzXKHSX0gWvzuTtkF0"
+    WASABI_ENDPOINT = "https://s3.eu-central-2.wasabisys.com"
+    BUCKET_NAME = "nextory"
+    ebook_url = "https://api.nextory.com/reader/books/{identifier}/packages/epub"
+    SHEET_ID = "1wnGksn_1DY1n1eeWVD9e663Uy_gAkm-B_fKP1XiJRsw"
+    SHEET_NAME = "nextory_epub_identifier"
+    SCOPES = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    spine_headers = {
+        'X-Device-id': 'eydRrzeOTfKuB0SysK23OH',
+        'X-Locale': 'en_US',
+        'X-App-Version': '5.31.0',
+        'X-Model': 'Asus+ASUS_I003DD',
+        'X-Application-Id': '200',
+        'X-Country-Code': 'SE',
+        'X-Login-Token': "M3n9Tam/y/j05HMwMXC03UayMeX+mJaKj5SAKTKC+rYBPeQC+ImkvS2Vvw7y/R46",
+        'X-Profile-Token': "key+QghzZ4raOuj4XF6zifWHt9d36UmPsLgBvCY5aoPIIDrxESsQ1yIp29KkfTK2",
+        'X-Os-Info': 'Android 9'
+    }
+
+    def __init__(self):
+        print('Starting ... ')
+        print('Number of CPUs:', os.cpu_count())
+        creds = service_account.Credentials.from_service_account_file('creds.json', scopes=self.SCOPES)
+        client = gspread.authorize(creds)
+        sheet = client.open_by_key(self.SHEET_ID)
+        self.sheet = sheet.worksheet(self.SHEET_NAME)
+        self.session = requests.Session()
+
+    def get_rows(self, start_row, count=100):
+        return self.sheet.get(f"A{start_row}:E{start_row + count - 1}")
+
+    def upload_wasabi(self, memory_file, object_name):
+        try:
+            self.s3.put_object(Body=memory_file, Bucket=self.BUCKET_NAME, Key=f"ebooks/{object_name}.epub")
+            print(f"File uploaded successfully as '{object_name}'")
+        except Exception as e:
+            print('Error while uploading file', e)
+            raise e
+
+    def get_book_parts_list(self, url):
+        response = self.session.get(url, headers=self.spine_headers)
+        response_data = json.loads(response.text)
+        crypt_iv_base64 = response_data.get('crypt_iv', '')
+        crypt_key_base64 = response_data.get('crypt_key', '')
+        spine_urls = []
+        total = len(response_data.get('spines', []))
+        for index, spine in enumerate(response_data.get('spines')):
+            spine_url = spine.get('spine_url', '')
+            spine_urls.append({'index': index, 'spine_url': spine_url, 'total': total})
+        return crypt_iv_base64, crypt_key_base64, spine_urls
+
+    def send_part_request_decrypt(self, spine_url):
+        # print(f'Getting Part Number: {spine_url["index"] + 1}/{spine_url["total"]}')
+        for _ in range(2):
+            response = self.session.get(spine_url['spine_url'])
+            if response.status_code == 200:
+                encrypted_data = response.content
+                decryptor = self.cipher.decryptor()
+                decrypted_data = decryptor.update(encrypted_data) + decryptor.finalize()
+                return {'index': spine_url['index'], 'decrypted_data': decrypted_data}
+            else:
+                print('Request failed retrying')
+        return False
+
+    def download_book_parts(self, crypt_iv_base64, crypt_key_base64, spine_urls, identifier):
+        crypt_iv = base64.b64decode(crypt_iv_base64.strip())
+        crypt_key = base64.b64decode(crypt_key_base64.strip())
+        self.cipher = Cipher(algorithms.AES(crypt_key), modes.CBC(crypt_iv), backend=default_backend())
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            results = list(executor.map(self.send_part_request_decrypt, spine_urls))
+
+        results = sorted(results, key=lambda x: x['index'])
+        book_parts_list = []
+        for result in results:
+            file_object = io.BytesIO()
+            file_object.write(result['decrypted_data'])
+            book_parts_list.append(file_object)
+        return book_parts_list
+
+    def get_upload_book_epub(self, row):
+        row_index, identifier, status = row[:3]
+        if status == "FALSE":
+            try:
+                print('Getting parts list for:', identifier)
+                crypt_iv_base64, crypt_key_base64, spine_urls = self.get_book_parts_list(
+                    self.ebook_url.format(identifier=identifier))
+                if len(spine_urls) < 100:
+                    book_parts_content = self.download_book_parts(crypt_iv_base64, crypt_key_base64, spine_urls,
+                                                                  identifier)
+                    output_bytes = io.BytesIO()
+                    print('Merging Parts together', identifier)
+
+                    doMerge(outputio=output_bytes, files=book_parts_content)
+                    output_bytes.seek(0)
+
+                    # self.upload_wasabi(output_bytes, identifier)
+                    s3.put_object(Body=output_bytes, Bucket=self.BUCKET_NAME, Key=f"ebooks/{identifier}.epub")
+                    print(f"File uploaded successfully as '{identifier}'")
+                    return f"C{row_index}", "DONE"
+                else:
+                    print('Skipping as number of parts is greater than 100')
+                    return f"C{row_index}", "SKIP"
+            except Exception as e:
+                print('Caught an exception for:', identifier, e)
+                return f"C{row_index}", f"Failed: {e}"
+
+    def initializer(self):
+        global s3
+        global sheet
+        s3 = boto3.client(
+            "s3",
+            aws_access_key_id=self.ACCESS_KEY,
+            aws_secret_access_key=self.SECRET_KEY,
+            endpoint_url=self.WASABI_ENDPOINT
+        )
+
+    def run(self):
+        global merge_lock
+        total = self.sheet.row_count
+        print('Total Number of Rows:', total)
+
+        start_index = 51208
+        all_rows = self.get_rows(start_row=start_index, count=start_index + 100)
+        chunk = 50
+        with multiprocessing.Pool(processes=os.cpu_count(), initializer=self.initializer) as pool:
+            for start in range(0, total, chunk):
+                rows = all_rows[start: start + chunk]
+                try:
+                    async_result = pool.map_async(self.get_upload_book_epub, rows)
+                    updates = async_result.get(timeout=1200)
+                    g_updates = []
+                    for update in updates:
+                        if update:
+                            cell = update[0]
+                            value = update[1]
+                            g_updates.append({'range': cell, 'values': [[value]]})
+                    self.sheet.batch_update(g_updates)
+                except multiprocessing.TimeoutError:
+                    print('Timeout Error occured')
+                    continue
+
+
+def main():
+    obj = NextoryDownload()
+    obj.run()
+
+
+if __name__ == "__main__":
+    main()
